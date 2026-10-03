@@ -8,5 +8,9 @@
   "quoteProps": "as-needed",
   "trailingComma": "all",
   "bracketSpacing": true,
-  "arrowParens": "avoid"
+  "arrowParens": "avoid",
+  "ignorePatterns": [
+    ".github/workflows/ghav-*.yml",
+    ".oxfmtrc.json"
+  ]
 }

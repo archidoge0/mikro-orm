@@ -1,0 +1,112 @@
+name: "ghav human: tests"
+"on":
+  push:
+    branches:
+      - ghav/dev/7173
+    paths:
+      - .ghav/human
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source code
+        uses: actions/checkout@v6
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+      - name: Extract cached dependencies
+        uses: actions/setup-node@v6
+        with:
+          cache: yarn
+      - name: Install
+        run: yarn
+      - name: Build
+        run: yarn build
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source code
+        uses: actions/checkout@v6
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+      - name: Extract cached dependencies
+        uses: actions/setup-node@v6
+        with:
+          cache: yarn
+      - name: Install
+        run: yarn
+      - name: Typecheck tests
+        run: yarn tsc-check-tests
+  test:
+    name: Tests (node ${{ matrix.node-version }}, ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 22
+          - 24
+        shard:
+          - 1
+          - 2
+          - 3
+    steps:
+      - name: Checkout Source code
+        uses: actions/checkout@v6
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          package-manager-cache: false
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+      - name: Extract cached dependencies
+        uses: actions/setup-node@v6
+        with:
+          cache: yarn
+      - name: Install & pull docker images
+        run: |
+          docker compose pull &
+          yarn
+          wait
+      - name: Init docker
+        run: docker compose up -d --wait
+      - name: Set CC Required env vars
+        run: export GIT_BRANCH=$GITHUB_HEAD_REF && export GIT_COMMIT_SHA=$(git rev-parse origin/$GITHUB_HEAD_REF)
+      - name: Get number of CPU cores
+        id: cpu-cores
+        uses: SimenB/github-actions-cpu-cores@v2
+      - name: Test
+        if: matrix.node-version != 24
+        run: |
+          yarn test --max-workers ${{ steps.cpu-cores.outputs.count }} --shard ${{ matrix.shard }}/3
+          git status && git diff
+        env:
+          RETRY_TESTS: 1
+      - name: Coverage
+        if: matrix.node-version == 24
+        run: |
+          yarn clean-tests
+          yarn test --coverage --max-workers ${{ steps.cpu-cores.outputs.count }} --shard ${{ matrix.shard }}/3
+          git status && git diff
+        env:
+          RETRY_TESTS: 1
+      - name: Teardown docker
+        run: docker compose down
