@@ -1,11 +1,7 @@
 name: tests
 
 on:
-  push:
-    branches: [ master, v7, renovate/** ]
-  pull_request:
-    branches: [ master, v7 ]
-
+  workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true

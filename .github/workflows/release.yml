@@ -2,37 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: Version bump strategy
-        required: true
-        default: patch
-        type: choice
-        options: [ patch, minor, major, custom ]
-      custom_version:
-        description: Custom version (only when version=custom)
-        required: false
-        type: string
-      dist-tag:
-        description: NPM dist-tag (prod, next, or rc)
-        required: false
-        type: string
-        default: 'prod'
-      ref:
-        description: Git ref to publish (branch, tag, or commit SHA)
-        type: string
-        default: 'master'
-
-  workflow_call:
-    inputs:
-      ref:
-        description: Git ref to publish (branch, tag, or commit SHA)
-        required: true
-        type: string
-      dist-tag:
-        description: NPM dist-tag (prod, next, or rc)
-        type: string
-
 permissions:
   contents: write
   id-token: write
